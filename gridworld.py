@@ -67,6 +67,8 @@ class Gridworld:
         
         for run in range(N_runs):
             self._init_run()
+            #call reset() to reset Q-values and latencies, ie forget all he learnt
+            #self.reset()
             latencies = self._learn_run(N_trials=N_trials)
             self.latencies += latencies/N_runs
 
@@ -100,7 +102,7 @@ class Gridworld:
         filter=1. : timescale of the running average.
         log    : Logarithmic y axis.
         """
-        figure()
+        figure() #a matplotlib figure instance
         xlabel('trials')
         ylabel('time to reach target')
         latencies = array(self.latency_list)
@@ -180,6 +182,7 @@ class Gridworld:
         """
         # initialize the Q-values and the eligibility trace
         self.Q = 0.01 * numpy.random.rand(self.N,self.N,4) + 0.1
+        # CHANGE: Q = [20,20,8]
         self.e = numpy.zeros((self.N,self.N,4))
         
         # list that contains the times it took the agent to reach the target for all trials
@@ -225,6 +228,10 @@ class Gridworld:
             if not self._is_wall(self.x_position,self.y_position):
                 break
         
+        print "Starting trial at position ({0},{1}), reward at ({2},{3})".format(self.x_position,self.y_position,self.reward_position[0],self.reward_position[1])
+        if self.obstacle:
+              print "Obstacle is in position (?,?)"
+
         # initialize the latency (time to reach the target) for this trial
         latency = 0.
 
@@ -307,18 +314,22 @@ class Gridworld:
         self.y_position_old = self.y_position
         
         # update the agents position according to the action
-        # move to the down?
+        #  move right
         if self.action == 0:
             self.x_position += 1
-        # move to the up
+            print "({0},{1}) >>> ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+        # move left
         elif self.action == 1:
             self.x_position -= 1
-        # move right?
+            print "({0},{1}) <<< ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+        # move up
         elif self.action == 2:
             self.y_position += 1
-        # move left?
+            print "({0},{1}) ^^^ ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+        # move down
         elif self.action == 3:
             self.y_position -= 1
+            print "({0},{1}) vvv ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
         else:
             print "There must be a bug. This is not a valid action!"
                         
@@ -327,6 +338,7 @@ class Gridworld:
             self.x_position = self.x_position_old
             self.y_position = self.y_position_old
             self._wall_touch = True
+            print "#### wally ####"
         else:
             self._wall_touch = False
 
@@ -408,6 +420,5 @@ class Gridworld:
         close()
 
 if __name__ == "__main__":
-    world = Gridworld(4)
-    world.run(10,1)
-    
+    grid = Gridworld(4)
+    grid.run(10, 1);
