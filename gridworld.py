@@ -143,6 +143,7 @@ class Gridworld:
         Instant amnesia -  the agent forgets everything he has learned before    
         """
         self.Q = numpy.random.rand(self.N,self.N,4)
+        # CHANGE: Q = [20,20,8]
         self.latency_list = []
 
     def plot_Q(self):
@@ -209,7 +210,7 @@ class Gridworld:
 
         return array(self.latency_list)
 
-    def _run_trial(self,visualize=False):
+    def _run_trial(self,visualize=True):
         """
         Run a single trial on the gridworld until the agent reaches the reward position.
         Return the time it takes to get there.
@@ -250,6 +251,9 @@ class Gridworld:
         """
         Update the current estimate of the Q-values according to SARSA.
         """
+        
+        # CHANGE: Q = sum(wi,ri(s))
+        
         # update the eligibility trace
         self.e = self.lambda_eligibility * self.e
         self.e[self.x_position_old, self.y_position_old,self.action_old] += 1.
@@ -404,6 +408,6 @@ class Gridworld:
         close()
 
 if __name__ == "__main__":
-    world = Gridworld(6, (2,3))
-    world._learn_run()
+    world = Gridworld(4)
+    world.run(10,1)
     
