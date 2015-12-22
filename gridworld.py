@@ -16,7 +16,7 @@ class Gridworld:
     navigation_map()     : Plot the movement direction with the highest Q-value for all positions.
     """    
         
-    def __init__(self,N,reward_position=(0,0),obstacle=False, lambda_eligibility=0.):
+    def __init__(self,N,reward_position=(0.8,0.8),obstacle=False, lambda_eligibility=0.95):
         """
         Creates a quadratic NxN gridworld. 
 
@@ -36,20 +36,20 @@ class Gridworld:
 
         # reward administered t the target location and when
         # bumping into walls
-        self.reward_at_target = 1.
-        self.reward_at_wall   = -0.5
+        self.reward_at_target = 10
+        self.reward_at_wall   = -2
 
         # probability at which the agent chooses a random
         # action. This makes sure the agent explores the grid.
         self.epsilon = 0.5
                                                                                                   
         # learning rate
-        self.eta = 0.1
+        self.eta = 0.005
 
         # discount factor - quantifies how far into the future
         # a reward is still considered important for the
         # current action
-        self.gamma = 0.99
+        self.gamma = 0.95
 
         # the decay factor for the eligibility trace the
         # default is 0., which corresponds to no eligibility
@@ -59,6 +59,9 @@ class Gridworld:
         # is there an obstacle in the room?
         self.obstacle = obstacle
 
+        # length of the steps the rat makes
+        self.step_length = 0.03
+
         # initialize the Q-values etc.
         self._init_run()
 
@@ -67,7 +70,7 @@ class Gridworld:
         
         for run in range(N_runs):
             self._init_run()
-            #call reset() to reset Q-values and latencies, ie forget all he learnt
+            #call reset() to reset Q-values and latencies, ie forget all he learnt 
             #self.reset()
             latencies = self._learn_run(N_trials=N_trials)
             self.latencies += latencies/N_runs
@@ -122,18 +125,26 @@ class Gridworld:
         """
         self.x_direction = numpy.zeros((self.N,self.N))
         self.y_direction = numpy.zeros((self.N,self.N))
-        
+
         self.actions = argmax(self.Q[:,:,:],axis=2)
-        self.y_direction[self.actions==0] = 1.
-        self.y_direction[self.actions==1] = -1.
-        self.y_direction[self.actions==2] = 0.
-        self.y_direction[self.actions==3] = 0.
+        self.y_direction[self.actions==0] = 1
+        self.y_direction[self.actions==1] = 1
+        self.y_direction[self.actions==2] = 0
+        self.y_direction[self.actions==3] = -1
+        self.y_direction[self.actions==4] = -1
+        self.y_direction[self.actions==5] = -1
+        self.y_direction[self.actions==6] = 0
+        self.y_direction[self.actions==7] = 1
         
-        self.x_direction[self.actions==0] = 0.
-        self.x_direction[self.actions==1] = 0.
-        self.x_direction[self.actions==2] = 1.
-        self.x_direction[self.actions==3] = -1.
-        
+        self.x_direction[self.actions==0] = 0
+        self.x_direction[self.actions==1] = 1
+        self.x_direction[self.actions==2] = 1
+        self.x_direction[self.actions==3] = 1
+        self.x_direction[self.actions==4] = 0
+        self.x_direction[self.actions==5] = -1
+        self.x_direction[self.actions==6] = -1
+        self.x_direction[self.actions==7] = -1
+
         figure()
         quiver(self.x_direction,self.y_direction)
         axis([-0.5, self.N - 0.5, -0.5, self.N - 0.5])
@@ -144,8 +155,7 @@ class Gridworld:
         
         Instant amnesia -  the agent forgets everything he has learned before    
         """
-        self.Q = numpy.random.rand(self.N,self.N,4)
-        # CHANGE: Q = [20,20,8]
+        self.Q = numpy.random.rand(self.N,self.N,8)
         self.latency_list = []
 
     def plot_Q(self):
@@ -181,9 +191,8 @@ class Gridworld:
         Initialize the Q-values, eligibility trace, position etc.
         """
         # initialize the Q-values and the eligibility trace
-        self.Q = 0.01 * numpy.random.rand(self.N,self.N,4) + 0.1
-        # CHANGE: Q = [20,20,8]
-        self.e = numpy.zeros((self.N,self.N,4))
+        self.Q = 0.01 * numpy.random.rand(self.N,self.N,8) + 0.1
+        self.e = numpy.zeros((self.N,self.N,8))
         
         # list that contains the times it took the agent to reach the target for all trials
         # serves to track the progress of learning
@@ -221,13 +230,10 @@ class Gridworld:
         Options:
         visual: If 'visualize' is 'True', show the time course of the trial graphically
         """
-        # choose the initial position and make sure that its not in the wall
-        while True:
-            self.x_position = numpy.random.randint(self.N)
-            self.y_position = numpy.random.randint(self.N)
-            if not self._is_wall(self.x_position,self.y_position):
-                break
-        
+        # choose the initial position (0.1,0.1)
+        self.x_position = 0.1
+        self.y_position = 0.1
+                
         print "Starting trial at position ({0},{1}), reward at ({2},{3})".format(self.x_position,self.y_position,self.reward_position[0],self.reward_position[1])
         if self.obstacle:
               print "Obstacle is in position (?,?)"
@@ -244,7 +250,7 @@ class Gridworld:
         while not self._arrived():
             self._update_state()
             self._choose_action()    
-            self._update_Q()
+            self._update_w()
             if visualize:
                 self._visualize_current_state()
         
@@ -254,13 +260,13 @@ class Gridworld:
             self._close_visualization()
         return latency
 
-    def _update_Q(self):
+    def _update_w(self):
         """
-        Update the current estimate of the Q-values according to SARSA.
+        I changed this from _update_Q to _update_w because for each state that
+        has a non-zero eligibility trace, we must update the weights associated
+        with the action taken at that state for all centres j - but I am not
+        sure how r_j is used in this calculation?
         """
-        
-        # CHANGE: Q = sum(wi,ri(s))
-        
         # update the eligibility trace
         self.e = self.lambda_eligibility * self.e
         self.e[self.x_position_old, self.y_position_old,self.action_old] += 1.
@@ -282,7 +288,7 @@ class Gridworld:
         """
         self.action_old = self.action
         if numpy.random.rand() < self.epsilon:
-            self.action = numpy.random.randint(4)
+            self.action = numpy.random.randint(8)
         else:
             self.action = argmax(self.Q[self.x_position,self.y_position,:])    
     
@@ -290,7 +296,7 @@ class Gridworld:
         """
         Check if the agent has arrived.
         """
-        return (self.x_position == self.reward_position[0] and self.y_position == self.reward_position[1])
+        return (self.x_position - self.reward_position[0])**2 + (self.y_position - self.reward_position[1])**2 <= 0.1**2
 
     def _reward(self):
         """
@@ -313,23 +319,44 @@ class Gridworld:
         self.x_position_old = self.x_position
         self.y_position_old = self.y_position
         
+        step_length = self.step_length
         # update the agents position according to the action
-        #  move right
+        #  move up
         if self.action == 0:
-            self.x_position += 1
-            print "({0},{1}) >>> ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
-        # move left
+            self.y_position += step_length
+            print "({0},{1}) ^^^^ ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+        # move up right
         elif self.action == 1:
-            self.x_position -= 1
-            print "({0},{1}) <<< ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
-        # move up
+            self.x_position += sqrt((step_length**2)/2)
+            self.y_position += sqrt((step_length**2)/2)
+            print "({0},{1}) ^^>> ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+        # move right
         elif self.action == 2:
-            self.y_position += 1
-            print "({0},{1}) ^^^ ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
-        # move down
+            self.x_position += step_length
+            print "({0},{1}) >>>> ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+        # move down right
         elif self.action == 3:
-            self.y_position -= 1
-            print "({0},{1}) vvv ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+            self.x_position += sqrt((step_length**2)/2)
+            self.y_position -= sqrt((step_length**2)/2)
+            print "({0},{1}) vv>> ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+        #  move down
+        elif self.action == 4:
+            self.y_position -= step_length
+            print "({0},{1}) vvvv ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+        #  move down left
+        elif self.action == 5:
+            self.y_position -= sqrt((step_length**2)/2)
+            self.x_position -= sqrt((step_length**2)/2)
+            print "({0},{1}) vv<< ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+        #  move left
+        elif self.action == 6:
+            self.x_position -= step_length
+            print "({0},{1}) <<<< ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+        #  move up left
+        elif self.action == 7:
+            self.x_position -= sqrt((step_length**2)/2)
+            self.y_position += sqrt((step_length**2)/2)
+            print "({0},{1}) ^^<< ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
         else:
             print "There must be a bug. This is not a valid action!"
                         
@@ -356,12 +383,12 @@ class Gridworld:
             y_position = self.y_position
 
         # check of the agent is trying to leave the gridworld
-        if x_position < 0 or x_position >= self.N or y_position < 0 or y_position >= self.N:
+        if x_position <= 0 or x_position >= 1 or y_position <= 0 or y_position >= 1:
             return True
 
         # check if the agent has bumped into an obstacle in the room
         if self.obstacle:
-            if y_position == self.N/2 and x_position>self.N/2:
+            if y_position == 1/2 and x_position>1/2:
                 return True
 
         # if none of the above is the case, this position is not a wall
@@ -409,8 +436,8 @@ class Gridworld:
         
         for x in range(self.N):
             for y in range(self.N):
-                if self._is_wall(x_position=x,y_position=y):
-                    self._display[x,y,2] = 1.
+                if self._is_wall(x_position=x/19,y_position=y/19):
+                    self._display[x/19,y/19,2] = 1.
 
                 self._visualization = imshow(self._display,interpolation='nearest',origin='lower')
         
@@ -420,5 +447,5 @@ class Gridworld:
         close()
 
 if __name__ == "__main__":
-    grid = Gridworld(4)
+    grid = Gridworld(20)
     grid.run(10, 1);
