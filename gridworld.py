@@ -396,6 +396,7 @@ class Gridworld:
 		return False 
 			
 	def _visualize_current_state(self):
+
 		"""
 		Show the gridworld. The squares are colored in 
 		red - the position of the agent - turns yellow when reaching the target or running into a wall
@@ -404,25 +405,22 @@ class Gridworld:
 		"""
 
 		# set the agents color
-		self._display[self.x_position_old,self.y_position_old,0] = 0
-		self._display[self.x_position_old,self.y_position_old,1] = 0
-		self._display[self.x_position,self.y_position,0] = 1
+		self._update_display(self.x_position_old, self.y_position_old, 1, 0.5)
+		self._update_display(self.x_position_old, self.y_position_old, 0, 0)
+		self._update_display(self.x_position, self.y_position, 1, 1)
+
 		if self._wall_touch:
-			self._display[self.x_position,self.y_position,1] = 1
+			self._update_display(self.x_position, self.y_position, 0, 1)
 			
 		# set the reward locations
-		self._display[self.reward_position[0],self.reward_position[1],1] = 1
+		self._update_display(self.reward_position[0], self.reward_position[1], 0, 1)
 
 		# update the figure
 		self._visualization.set_data(self._display)
-		close()
-		imshow(self._display,interpolation='nearest',origin='lower')
-		show()
-		
 		draw()
 		
 		# and wait a little while to control the speed of the presentation
-		sleep(0.2)
+		sleep(0.01)
 		
 	def _init_visualization(self):
 		
@@ -432,25 +430,25 @@ class Gridworld:
 		self._display = numpy.zeros((self.N,self.N,3))
 
 		# position of the agent
-		self._display[self.x_position,self.y_position,0] = 1
-		self._display[self.reward_position[0],self.reward_position[1],1] = 1
-		
-		for x in range(self.N):
-			for y in range(self.N):
-				if self._is_wall(x_position=x/19,y_position=y/19):
-					self._display[x/19,y/19,2] = 1.
+		self._update_display(self.x_position, self.y_position, 1, 1)
+		self._update_display(self.reward_position[0], self.reward_position[1], 0, 1)
+				
+		#for x in range(self.N): # TODO
+		#    for y in range(self.N):
+		#        if self._is_wall(x_position=x/19,y_position=y/19):
+		#            self._display[x/19,y/19,2] = 1.
 
-       self._visualization = imshow(self._display,interpolation='nearest',origin='lower')
-        
-        ion()
-        show()
-        
-                
-    def _update_display(self, x, y, channel, value):
-        """
-        Convert continious position to discrete for ploting (from [0,1] to [0,N])
-        """
-        self._display[floor(x*self.N), floor(y*self.N), channel] = value
+		self._visualization = imshow(self._display,interpolation='nearest',origin='lower')
+		
+		ion()
+		show()
+		
+				
+	def _update_display(self, x, y, channel, value):
+		"""
+		Convert continious position to discrete for ploting (from [0,1] to [0,N])
+		"""
+		self._display[floor(x*self.N), floor(y*self.N), channel] = value
 	
 	def _close_visualization(self):
 		print "Press <return> to proceed..."
