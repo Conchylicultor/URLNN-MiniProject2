@@ -1,7 +1,9 @@
 from pylab import *                                                                                                  
 import numpy
 from time import sleep
+import os, shutil
 
+        
 class Gridworld:
     """
     A class that implements a quadratic NxN gridworld. 
@@ -27,6 +29,17 @@ class Gridworld:
         reward_position = (x_coordinate,y_coordinate): the reward location
         obstacle = True:  Add a wall to the gridworld.
         """    
+        
+        
+        print 'Warning: Errase all previous results in \'results/\''
+        folder = 'results/'
+        for the_file in os.listdir(folder):
+            file_path = os.path.join(folder, the_file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+            except Exception, e:
+                print e
         
         # gridworld size
         self.N = N
@@ -61,19 +74,46 @@ class Gridworld:
 
         # length of the steps the rat makes
         self.step_length = 0.03
+        
+        self._isRecording = True # useless (not used)
+        self._isVerbose = False
+        self._isVisualization = False
 
         # initialize the Q-values etc.
         self._init_run()
 
-    def run(self,N_trials=10,N_runs=1):
+    def run(self,N_trials=50,N_runs=10):
         self.latencies = zeros(N_trials)
         
         for run in range(N_runs):
             self._init_run()
             #call reset() to reset Q-values and latencies, ie forget all he learnt 
-            #self.reset()
-            latencies = self._learn_run(N_trials=N_trials)
+            self.reset()
+            
+            """
+            Run a learning period consisting of N_trials trials. 
+            
+            Options:
+            N_trials :     Number of trials
+
+            Note: The Q-values are not reset. Therefore, running this routine
+            several times will continue the learning process. If you want to run
+            a completely new simulation, call reset() before running it.
+            
+            """
+            for trial in range(N_trials):
+                print 'Start trial ', run, ', ', trial
+                # run a trial and store the time it takes to the target
+                latency = self._run_trial()
+                self.latency_list.append(latency)
+                imsave('results/' + str(run) + '_' + str(trial) + '.png', self._display)
+                print 'Results saved'
+
+            latencies = array(self.latency_list)
             self.latencies += latencies/N_runs
+            
+            self.learning_curve() # TODO: Check the function
+            savefig('results/' + str(run) + '_learningCurve_.png')
 
     def visualize_trial(self):
         """
@@ -203,26 +243,7 @@ class Gridworld:
         self.y_position = None
         self.action = None
 
-    def _learn_run(self,N_trials=10):
-        """
-        Run a learning period consisting of N_trials trials. 
-        
-        Options:
-        N_trials :     Number of trials
-
-        Note: The Q-values are not reset. Therefore, running this routine
-        several times will continue the learning process. If you want to run
-        a completely new simulation, call reset() before running it.
-        
-        """
-        for trial in range(N_trials):
-            # run a trial and store the time it takes to the target
-            latency = self._run_trial()
-            self.latency_list.append(latency)
-
-        return array(self.latency_list)
-
-    def _run_trial(self,visualize=True):
+    def _run_trial(self):
         """
         Run a single trial on the gridworld until the agent reaches the reward position.
         Return the time it takes to get there.
@@ -233,6 +254,8 @@ class Gridworld:
         # choose the initial position (0.1,0.1)
         self.x_position = 0.1
         self.y_position = 0.1
+        
+        maxIter = 10000
                 
         print "Starting trial at position ({0},{1}), reward at ({2},{3})".format(self.x_position,self.y_position,self.reward_position[0],self.reward_position[1])
         if self.obstacle:
@@ -242,8 +265,7 @@ class Gridworld:
         latency = 0.
 
         # start the visualization, if asked for
-        if visualize:
-            self._init_visualization()    
+        self._init_visualization()
             
         # run the trial
         self._choose_action()
@@ -251,13 +273,21 @@ class Gridworld:
             self._update_state()
             self._choose_action()    
             self._update_w()
-            if visualize:
-                self._visualize_current_state()
+            self._visualize_current_state(latency)
         
             latency = latency + 1
+            if latency > maxIter:
+                break;
 
-        if visualize:
+        if self._arrived():
+            print 'Reward reached in ', latency, ' steps'
+        else:
+            print 'Aborded'
+            latency = -1 # TODO
+        
+        if self._isVisualization:
             self._close_visualization()
+            
         return latency
 
     def _update_w(self):
@@ -324,48 +354,44 @@ class Gridworld:
         #  move up
         if self.action == 0:
             self.y_position += step_length
-            print "({0},{1}) ^^^^ ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
         # move up right
         elif self.action == 1:
             self.x_position += sqrt((step_length**2)/2)
             self.y_position += sqrt((step_length**2)/2)
-            print "({0},{1}) ^^>> ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
         # move right
         elif self.action == 2:
             self.x_position += step_length
-            print "({0},{1}) >>>> ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
         # move down right
         elif self.action == 3:
             self.x_position += sqrt((step_length**2)/2)
             self.y_position -= sqrt((step_length**2)/2)
-            print "({0},{1}) vv>> ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
         #  move down
         elif self.action == 4:
             self.y_position -= step_length
-            print "({0},{1}) vvvv ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
         #  move down left
         elif self.action == 5:
             self.y_position -= sqrt((step_length**2)/2)
             self.x_position -= sqrt((step_length**2)/2)
-            print "({0},{1}) vv<< ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
         #  move left
         elif self.action == 6:
             self.x_position -= step_length
-            print "({0},{1}) <<<< ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
         #  move up left
         elif self.action == 7:
             self.x_position -= sqrt((step_length**2)/2)
             self.y_position += sqrt((step_length**2)/2)
-            print "({0},{1}) ^^<< ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
         else:
             print "There must be a bug. This is not a valid action!"
-                        
+        
+        if self._isVerbose:
+            print "({0},{1}) >> ({2},{3})".format(self.x_position_old,self.y_position_old,self.x_position,self.y_position)
+        
         # check if the agent has bumped into a wall.
         if self._is_wall():
             self.x_position = self.x_position_old
             self.y_position = self.y_position_old
             self._wall_touch = True
-            print "#### wally ####"
+            if self._isVerbose:
+                print "#### wally ####"
         else:
             self._wall_touch = False
 
@@ -387,14 +413,14 @@ class Gridworld:
             return True
 
         # check if the agent has bumped into an obstacle in the room
-        if self.obstacle:
+        if self.obstacle: # TODO: No obstacle (never ?) < To remove ?
             if y_position == 1/2 and x_position>1/2:
                 return True
 
         # if none of the above is the case, this position is not a wall
         return False 
             
-    def _visualize_current_state(self):
+    def _visualize_current_state(self, latency):
         """
         Show the gridworld. The squares are colored in 
         red - the position of the agent - turns yellow when reaching the target or running into a wall
@@ -403,19 +429,21 @@ class Gridworld:
         """
 
         # set the agents color
-        self._update_display(self.x_position_old, self.y_position_old, 1, 0.5)
-        self._update_display(self.x_position_old, self.y_position_old, 0, 0)
-        self._update_display(self.x_position, self.y_position, 1, 1)
+        self._update_display(self.x_position_old, self.y_position_old, 0, latency/100) # Decrease color over time
+        # self._update_display(self.x_position_old, self.y_position_old, 0, 0.5) # Cst color
+        self._update_display(self.x_position_old, self.y_position_old, 1, 0)
+        self._update_display(self.x_position, self.y_position, 0, 1)
 
         if self._wall_touch:
-            self._update_display(self.x_position, self.y_position, 0, 1)
+            self._update_display(self.x_position, self.y_position, 1, 1)
             
         # set the reward locations
-        self._update_display(self.reward_position[0], self.reward_position[1], 0, 1)
+        self._update_display(self.reward_position[0], self.reward_position[1], 1, 1)
 
         # update the figure
-        self._visualization.set_data(self._display)
-        draw()
+        if self._isVisualization:
+            self._visualization.set_data(self._display)
+            draw()
         
         # and wait a little while to control the speed of the presentation
         sleep(0.01)
@@ -428,18 +456,19 @@ class Gridworld:
         self._display = numpy.zeros((self.N,self.N,3))
 
         # position of the agent
-        self._update_display(self.x_position, self.y_position, 1, 1)
-        self._update_display(self.reward_position[0], self.reward_position[1], 0, 1)
+        self._update_display(self.x_position, self.y_position, 0, 1)
+        self._update_display(self.reward_position[0], self.reward_position[1], 1, 1)
                 
-        #for x in range(self.N): # TODO
+        #for x in range(self.N): # TODO: No obstacles ?
         #    for y in range(self.N):
         #        if self._is_wall(x_position=x/19,y_position=y/19):
         #            self._display[x/19,y/19,2] = 1.
 
         self._visualization = imshow(self._display,interpolation='nearest',origin='lower')
         
-        ion()
-        show()
+        if self._isVisualization:
+            ion()
+            show()
         
                 
     def _update_display(self, x, y, channel, value):
@@ -455,4 +484,5 @@ class Gridworld:
 
 if __name__ == "__main__":
     grid = Gridworld(20)
+    #grid.run(50, 10); # For the final run
     grid.run(10, 1);
