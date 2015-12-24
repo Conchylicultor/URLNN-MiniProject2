@@ -111,7 +111,7 @@ class Gridworld:
                 imsave('results/' + str(run) + '_' + str(trial) + '.png', self._display)
                 
                 self.navigation_map() # TODO: Check the function
-                savefig('results/' + str(run) + '_navigationMap_.png')
+                savefig('results/' + str(run) + '_' + str(trial) + '_navigationMap_.png')
                 
                 if self._isVisualization:
                     self._close_visualization()
@@ -438,7 +438,7 @@ class Gridworld:
         """
 
         # set the agents color
-        self._update_display(self.x_position_old, self.y_position_old, 0, latency/100) # Decrease color over time
+        self._update_display(self.x_position_old, self.y_position_old, 0, 0.1+sin(latency/100)*0.8) # Decrease color over time
         # self._update_display(self.x_position_old, self.y_position_old, 0, 0.5) # Cst color
         self._update_display(self.x_position_old, self.y_position_old, 1, 0)
         self._update_display(self.x_position, self.y_position, 0, 1)
