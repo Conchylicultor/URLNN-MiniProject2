@@ -57,7 +57,7 @@ class Gridworld:
         self.epsilon = 0.5
 
         # learning rate
-        self.eta = 0.005
+        self.eta = 0.50 # Learning rate too high/low ?
 
         # discount factor - quantifies how far into the future
         # a reward is still considered important for the
@@ -77,7 +77,8 @@ class Gridworld:
         
         self._isRecording = True # useless (not used)
         self._isVerbose = False
-        self._isVisualization = False
+        self._isVisualization = True
+        self._isStopped = False
 
         # initialize the Q-values etc.
         self._init_run()
@@ -87,8 +88,8 @@ class Gridworld:
         
         for run in range(N_runs):
             self._init_run()
-            #call reset() to reset Q-values and latencies, ie forget all he learnt 
-            self.reset()
+            # Call reset() to reset Q-values and latencies, ie forget all he learnt
+            self.reset() # All runs are independant
             
             """
             Run a learning period consisting of N_trials trials. 
@@ -105,8 +106,16 @@ class Gridworld:
                 print 'Start trial ', run, ', ', trial
                 # run a trial and store the time it takes to the target
                 latency = self._run_trial()
+                
                 self.latency_list.append(latency)
                 imsave('results/' + str(run) + '_' + str(trial) + '.png', self._display)
+                
+                self.navigation_map() # TODO: Check the function
+                savefig('results/' + str(run) + '_navigationMap_.png')
+                
+                if self._isVisualization:
+                    self._close_visualization()
+                
                 print 'Results saved'
 
             latencies = array(self.latency_list)
@@ -114,6 +123,7 @@ class Gridworld:
             
             self.learning_curve() # TODO: Check the function
             savefig('results/' + str(run) + '_learningCurve_.png')
+            
 
     def visualize_trial(self):
         """
@@ -145,7 +155,7 @@ class Gridworld:
         filter=1. : timescale of the running average.
         log    : Logarithmic y axis.
         """
-        figure() #a matplotlib figure instance
+        figure(3) #a matplotlib figure instance
         xlabel('trials')
         ylabel('time to reach target')
         latencies = array(self.latency_list)
@@ -185,7 +195,7 @@ class Gridworld:
         self.x_direction[self.actions==6] = -1
         self.x_direction[self.actions==7] = -1
 
-        figure()
+        figure(2)
         quiver(self.x_direction,self.y_direction)
         axis([-0.5, self.N - 0.5, -0.5, self.N - 0.5])
 
@@ -285,9 +295,6 @@ class Gridworld:
         else:
             print 'Aborded'
             latency = -1 # TODO
-        
-        if self._isVisualization:
-            self._close_visualization()
             
         return latency
 
@@ -444,6 +451,7 @@ class Gridworld:
 
         # update the figure
         if self._isVisualization:
+            figure(1)
             self._visualization.set_data(self._display)
             draw()
         
@@ -453,7 +461,7 @@ class Gridworld:
     def _init_visualization(self):
         
         # create the figure
-        figure()
+        figure(1)
         # initialize the content of the figure (RGB at each position)
         self._display = numpy.zeros((self.N,self.N,3))
 
@@ -479,8 +487,12 @@ class Gridworld:
         self._display[floor(x*self.N), floor(y*self.N), channel] = value
 
     def _close_visualization(self):
-        print "Press <return> to proceed..."
-        raw_input()
+        if self._isStopped:
+            print "Press <return> to proceed..."
+            raw_input()
+        figure(1)
+        close()
+        figure(2)
         close()
 
 if __name__ == "__main__":
