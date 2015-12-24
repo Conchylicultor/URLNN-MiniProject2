@@ -57,7 +57,7 @@ class Gridworld:
         self.epsilon = 0.5
 
         # learning rate
-        self.eta = 0.50 # Learning rate too high/low ?
+        self.eta = 0.005
 
         # discount factor - quantifies how far into the future
         # a reward is still considered important for the
@@ -285,16 +285,15 @@ class Gridworld:
         sure how r_j is used in this calculation?
         """
         # update the eligibility trace
-        self.e = self.lambda_eligibility * self.e
-        self.e[self.x_position_old, self.y_position_old,self.action_old] += 1.
+        self.e = self.lambda_eligibility * self.e # TODO: Where is gamma ? e(t+1)=gamma*lambda*e(t) + ...
+        self.e[:, :,self.action_old] += 1. # TODO: Is it correct: All edgibility are updated ???
 
-        # update the Q-values
+        # update the W-values
         if self.action_old != None:
-            self.Q +=     \
-                self.eta * self.e *\
-                (self._reward()  \
-                - ( self.Q[self.x_position_old,self.y_position_old,self.action_old] \
-                - self.gamma * self.Q[self.x_position, self.y_position, self.action] )  )
+            q_old = self.compute_Q(self.x_position_old,self.y_position_old,self.action_old)
+            q_new = self.compute_Q(self.x_position, self.y_position, self.action)
+            delta_t = self._reward() - (q_old - self.gamma*q_new)
+            self.Q += self.eta * delta_t * self.e
 
     def _choose_action(self):    
         """
@@ -309,20 +308,23 @@ class Gridworld:
         else:
         # this will become argmax of sum over j of w*r
             Q_values = numpy.zeros(8); # Our eights values for our 8 possible actions
-            for i in range(self.N):
-                for j in range(self.N):
-                    for i_action in range(8):
-                        Q_values[i_action] += self.Q[i,j,i_action] * self.rj(i,j)
+            for i_action in range(8):
+                Q_values[i_action] = self.compute_Q(self.x_position, self.y_position, i_action)
             
             self.action = argmax(Q_values)
             #print Q_values
             #print self.action # TODO: Strange, action plot smaller and smaller values (bug in update rule ?)
 
-    def rj(self, i_value, j_value):
-        sigma = 0.05
-        xj = i_value/(self.N-1)
-        yj = j_value/(self.N-1)
-        return exp(-((xj-self.x_position)**2 + (yj-self.y_position)**2)/(2*sigma))
+    def compute_Q(self, x_pos, y_pos, i_action):
+        Q_value = 0
+        for i in range(self.N):
+                for j in range(self.N):
+                    sigma = 0.05
+                    xj = i/(self.N-1)
+                    yj = j/(self.N-1)
+                    rj = exp(-((xj-x_pos)**2 + (yj-y_pos)**2)/(2*sigma))
+                    Q_value += self.Q[i,j,i_action] * rj
+        return Q_value
     
     def _arrived(self):
         """
