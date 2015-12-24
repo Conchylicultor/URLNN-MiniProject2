@@ -312,13 +312,17 @@ class Gridworld:
             for i in range(self.N):
                 for j in range(self.N):
                     for i_action in range(8):
-                        Q_value[i_action] += self.Q[i,j,i_action] * rj(i,j)
+                        Q_values[i_action] += self.Q[i,j,i_action] * self.rj(i,j)
             
             self.action = argmax(Q_values)
+            #print Q_values
+            #print self.action # TODO: Strange, action plot smaller and smaller values (bug in update rule ?)
 
-    def rj(i_value, j_value):
+    def rj(self, i_value, j_value):
         sigma = 0.05
-        return exp(()**2 + ()**2/(2*sigma))
+        xj = i_value/(self.N-1)
+        yj = j_value/(self.N-1)
+        return exp(-((xj-self.x_position)**2 + (yj-self.y_position)**2)/(2*sigma))
     
     def _arrived(self):
         """
