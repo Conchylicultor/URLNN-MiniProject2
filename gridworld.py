@@ -77,7 +77,7 @@ class Gridworld:
         
         self._isRecording = True # useless (not used)
         self._isVerbose = False
-        self._isVisualization = True
+        self._isVisualization = False
         self._isStopped = False
 
         # initialize the Q-values etc.
@@ -177,14 +177,14 @@ class Gridworld:
         self.y_direction = numpy.zeros((self.N,self.N))
 
         self.actions = argmax(self.Q[:,:,:],axis=2)
-        self.y_direction[self.actions==0] = 1
-        self.y_direction[self.actions==1] = 1
-        self.y_direction[self.actions==2] = 0
-        self.y_direction[self.actions==3] = -1
-        self.y_direction[self.actions==4] = -1
-        self.y_direction[self.actions==5] = -1
-        self.y_direction[self.actions==6] = 0
-        self.y_direction[self.actions==7] = 1
+        self.y_direction[self.actions==0] = 1 # Up
+        self.y_direction[self.actions==1] = 1 # Ud right
+        self.y_direction[self.actions==2] = 0 # Right
+        self.y_direction[self.actions==3] = -1 # Down right
+        self.y_direction[self.actions==4] = -1 # Down
+        self.y_direction[self.actions==5] = -1 # Down left
+        self.y_direction[self.actions==6] = 0 # Left
+        self.y_direction[self.actions==7] = 1 # Up left
         
         self.x_direction[self.actions==0] = 0
         self.x_direction[self.actions==1] = 1
@@ -196,6 +196,7 @@ class Gridworld:
         self.x_direction[self.actions==7] = -1
 
         figure(2)
+        clf()
         quiver(self.x_direction,self.y_direction)
         axis([-0.5, self.N - 0.5, -0.5, self.N - 0.5])
 
