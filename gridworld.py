@@ -123,29 +123,7 @@ class Gridworld:
             
             self.learning_curve() # TODO: Check the function
             savefig('results/' + str(run) + '_learningCurve_.png')
-            
 
-    def visualize_trial(self):
-        """
-        Run a single trial with a graphical display that shows in
-                red   - the position of the agent
-                blue  - walls/obstacles
-                green - the reward position
-
-        Note that for the simulation, exploration is reduced -> self.epsilon=0.1
-    
-        """
-        # store the old exploration/exploitation parameter
-        epsilon = self.epsilon
-
-        # favor exploitation, i.e. use the action with the
-        # highest Q-value most of the time
-        self.epsilon = 0.1
-
-        self._run_trial(visualize=True)
-
-        # restore the old exploration/exploitation factor
-        self.epsilon = epsilon
 
     def learning_curve(self,log=False,filter=1.):
         """
@@ -330,8 +308,18 @@ class Gridworld:
             self.action = numpy.random.randint(8)
         else:
         # this will become argmax of sum over j of w*r
-            self.action = argmax(self.Q[self.x_position,self.y_position,:])    
+            Q_values = numpy.zeros(8); # Our eights values for our 8 possible actions
+            for i in range(self.N):
+                for j in range(self.N):
+                    for i_action in range(8):
+                        Q_value[i_action] += self.Q[i,j,i_action] * rj(i,j)
+            
+            self.action = argmax(Q_values)
 
+    def rj(i_value, j_value):
+        sigma = 0.05
+        return exp(()**2 + ()**2/(2*sigma))
+    
     def _arrived(self):
         """
         Check if the agent has arrived.
