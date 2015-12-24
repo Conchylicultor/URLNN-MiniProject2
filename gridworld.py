@@ -154,7 +154,7 @@ class Gridworld:
         self.x_direction = numpy.zeros((self.N,self.N))
         self.y_direction = numpy.zeros((self.N,self.N))
 
-        self.actions = argmax(self.Q[:,:,:],axis=2)
+        self.actions = argmax(self.W[:,:,:],axis=2)
         self.y_direction[self.actions==0] = 1 # Up
         self.y_direction[self.actions==1] = 1 # Ud right
         self.y_direction[self.actions==2] = 0 # Right
@@ -180,11 +180,11 @@ class Gridworld:
 
     def reset(self):
         """
-        Reset the Q-values (and the latency_list).
+        Reset the W-values (and the latency_list).
         
         Instant amnesia -  the agent forgets everything he has learned before    
         """
-        self.Q = numpy.random.rand(self.N,self.N,8)
+        self.W = numpy.random.rand(self.N,self.N,8)
         self.latency_list = []
 
     def plot_Q(self):
@@ -196,7 +196,7 @@ class Gridworld:
         figure()
         for i in range(4):
             subplot(2,2,i+1)
-            imshow(self.Q[:,:,i],interpolation='nearest',origin='lower',vmax=1.1)
+            imshow(self.W[:,:,i],interpolation='nearest',origin='lower',vmax=1.1)
             if i==0:
                 title('Up')
             elif i==1:
@@ -217,10 +217,10 @@ class Gridworld:
 
     def _init_run(self):
         """
-        Initialize the Q-values, eligibility trace, position etc.
+        Initialize the W-values, eligibility trace, position etc.
         """
-        # initialize the Q-values and the eligibility trace
-        self.Q = 0.01 * numpy.random.rand(self.N,self.N,8) + 0.1
+        # initialize the W-values and the eligibility trace
+        self.W = 0.01 * numpy.random.rand(self.N,self.N,8) + 0.1
         self.e = numpy.zeros((self.N,self.N,8))
         
         # list that contains the times it took the agent to reach the target for all trials
@@ -293,7 +293,7 @@ class Gridworld:
             q_old = self.compute_Q(self.x_position_old,self.y_position_old,self.action_old)
             q_new = self.compute_Q(self.x_position, self.y_position, self.action)
             delta_t = self._reward() - (q_old - self.gamma*q_new)
-            self.Q += self.eta * delta_t * self.e
+            self.W += self.eta * delta_t * self.e
 
     def _choose_action(self):    
         """
@@ -323,7 +323,7 @@ class Gridworld:
                     xj = i/(self.N-1)
                     yj = j/(self.N-1)
                     rj = exp(-((xj-x_pos)**2 + (yj-y_pos)**2)/(2*sigma))
-                    Q_value += self.Q[i,j,i_action] * rj
+                    Q_value += self.W[i,j,i_action] * rj
         return Q_value
     
     def _arrived(self):
