@@ -286,7 +286,9 @@ class Gridworld:
         """
         # update the eligibility trace
         self.e = self.lambda_eligibility * self.e # TODO: Where is gamma ? e(t+1)=gamma*lambda*e(t) + ...
-        self.e[:, :,self.action_old] += 1. # TODO: Is it correct: All edgibility are updated ???
+        for i in range(self.N):
+            for j in range(self.N):
+                self.e[i, j,self.action_old] += self.compute_rj(self.x_position_old, self.y_position_old, i, j) # TODO: Old position ?? Or new one ??
 
         # update the W-values
         if self.action_old != None:
@@ -318,13 +320,17 @@ class Gridworld:
     def compute_Q(self, x_pos, y_pos, i_action):
         Q_value = 0
         for i in range(self.N):
-                for j in range(self.N):
-                    sigma = 0.05
-                    xj = i/(self.N-1)
-                    yj = j/(self.N-1)
-                    rj = exp(-((xj-x_pos)**2 + (yj-y_pos)**2)/(2*sigma))
-                    Q_value += self.W[i,j,i_action] * rj
+            for j in range(self.N):
+                Q_value += self.W[i,j,i_action] * self.compute_rj(x_pos, y_pos,  i,j)
         return Q_value
+    
+    def compute_rj(self, x_pos, y_pos, i_val, j_val):
+        sigma = 0.05
+        xj = i_val/(self.N-1)
+        yj = j_val/(self.N-1)
+        rj = exp(-((xj-x_pos)**2 + (yj-y_pos)**2)/(2*sigma))
+        return rj
+        
     
     def _arrived(self):
         """
