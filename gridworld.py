@@ -31,7 +31,7 @@ class Gridworld:
         """    
         
         
-        print 'Warning: Errase all previous results in \'results/\''
+        print 'Warning: Erase all previous results in \'results/\''
         folder = 'results/'
         for the_file in os.listdir(folder):
             file_path = os.path.join(folder, the_file)
@@ -88,8 +88,8 @@ class Gridworld:
         
         for run in range(N_runs):
             self._init_run()
-            #call reset() to reset Q-values and latencies, ie forget all he learnt 
-            self.reset()
+            # Call reset() to reset Q-values and latencies, ie forget all he learnt
+            self.reset() # All runs are independant
             
             """
             Run a learning period consisting of N_trials trials. 
@@ -110,12 +110,12 @@ class Gridworld:
                 self.latency_list.append(latency)
                 imsave('results/' + str(run) + '_' + str(trial) + '.png', self._display)
                 
-                self.navigation_map # TODO:Check the function
+                self.navigation_map() # TODO: Check the function
                 savefig('results/' + str(run) + '_' + str(trial) + '_navigationMap_.png')
-
+                
                 if self._isVisualization:
-                	self._close_visualization()
-
+                    self._close_visualization()
+                
                 print 'Results saved'
 
             points = [(0.1,0.1),(0.1,0.9),(0.5,0.1),(0.5,0.9),(0.9,0.1)]
@@ -244,7 +244,7 @@ class Gridworld:
         """
         Initialize the W-values, eligibility trace, position etc.
         """
-        # initialize the Q-values and the eligibility trace
+        # initialize the W-values and the eligibility trace
         self.W = 0.01 * numpy.random.rand(self.N,self.N,8) + 0.1
         self.e = numpy.zeros((self.N,self.N,8))
         
@@ -297,11 +297,8 @@ class Gridworld:
         if self._arrived():
             print 'Reward reached in ', latency, ' steps'
         else:
-            print 'Aborded'
+            print 'Aborted'
             latency = -1 # TODO
-        
-        if self._isVisualization:
-            self._close_visualization()
             
         return latency
 
@@ -313,15 +310,15 @@ class Gridworld:
         sure how r_j is used in this calculation?
         """
         # update the eligibility trace
-        self.e = self.gamma * self.lambda_eligibility * self.e
+        self.e = self.gamma * self.lambda_eligibility * self.e # TODO: Is it the right gamma ?TODO: Where is gamma ? e(t+1)=gamma*lambda*e(t) + ...
         for i in range(self.N):
             for j in range(self.N):
-                self.e[i,j,self.action] += self.compute_rj(self.x_position,self.y_position,i,j)
+                self.e[i,j,self.action] += self.compute_rj(self.x_position,self.y_position,i,j) # TODO: Old position ?? Or new one ??
                 # updated based on action taken in state (x,y).
                 #print i, '-', j, ': ', self.compute_rj(self.x_position_old, self.y_position_old, i, j) # TODO: Too big. Pb with sigma in the gaussian ?
 
         # update the weights
-        if self.action_old != None:	
+        if self.action_old != None:
             q_old = self.compute_Q(self.x_position_old,self.y_position_old,self.action_old)
             q_new = self.compute_Q(self.x_position, self.y_position, self.action)
             delta_t = self._reward() - (q_old - self.gamma*q_new)
@@ -339,7 +336,6 @@ class Gridworld:
             self.action = numpy.random.randint(8)
             # print 'Randomly pick action', self.action
         else:
-
             Q_values = numpy.zeros(8) # 1 Q-value per action
             for i_action in range(8):
                 Q_values[i_action] = self.compute_Q(self.x_position, self.y_position, i_action)
@@ -354,7 +350,7 @@ class Gridworld:
         Q_value = 0
         for i in range(self.N):
             for j in range(self.N):
-            	Q_value += self.W[i,j,i_action] * self.compute_rj(x_pos, y_pos,i,j)
+            	Q_value += self.W[i,j,i_action] * self.compute_rj(x_pos, y_pos, i, j)
         return Q_value
 
     def compute_rj(self, x_pos, y_pos, i_val, j_val):
@@ -472,7 +468,7 @@ class Gridworld:
         """
 
         # set the agents color
-        self._update_display(self.x_position_old, self.y_position_old, 0, latency/100) # Decrease color over time
+        self._update_display(self.x_position_old, self.y_position_old, 0, 0.1+sin(latency/100)*0.8) # Decrease color over time
         # self._update_display(self.x_position_old, self.y_position_old, 0, 0.5) # Cst color
         self._update_display(self.x_position_old, self.y_position_old, 1, 0)
         self._update_display(self.x_position, self.y_position, 0, 1)
