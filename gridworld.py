@@ -269,7 +269,7 @@ class Gridworld:
                 
         print "Starting trial at position ({0},{1}), reward at ({2},{3})".format(self.x_position,self.y_position,self.reward_position[0],self.reward_position[1])
         if self.obstacle:
-              print "Obstacle is in position (?,?)"
+            print "Obstacle is in position (?,?)"
 
         # initialize the latency (time to reach the target) for this trial
         latency = 0.
@@ -287,8 +287,8 @@ class Gridworld:
             self._visualize_current_state(latency)
         
             latency = latency + 1
-            if latency % 2000 == 0:
-            	print 'Still going after', latency, 'iterations.'
+            if latency % 500 == 0:
+                print 'Still going after', latency, 'iterations.'
             if latency > maxIter:
                 break;
 
@@ -311,7 +311,8 @@ class Gridworld:
         self.e = self.gamma * self.lambda_eligibility * self.e # TODO: Is it the right gamma ?TODO: Where is gamma ? e(t+1)=gamma*lambda*e(t) + ...
         for i in range(self.N):
             for j in range(self.N):
-                self.e[i,j,self.action] += self.compute_rj(self.x_position,self.y_position,i,j) # TODO: Old position ?? Or new one ??
+                self.e[i,j,self.action] += self.compute_rj(self.x_position,self.y_position,i,j) # TODO: Old position ?? Or new one ?? << In the original code, it was the old position used to update e
+                # (I may be wrong but I think the old position correspond to the current position in the sarsa algorithm)
                 # updated based on action taken in state (x,y).
                 #print i, '-', j, ': ', self.compute_rj(self.x_position_old, self.y_position_old, i, j) # TODO: Too big. Pb with sigma in the gaussian ?
 
@@ -348,14 +349,14 @@ class Gridworld:
         Q_value = 0
         for i in range(self.N):
             for j in range(self.N):
-            	Q_value += self.W[i,j,i_action] * self.compute_rj(x_pos, y_pos, i, j)
+                Q_value += self.W[i,j,i_action] * self.compute_rj(x_pos, y_pos, i, j)
         return Q_value
 
     def compute_rj(self, x_pos, y_pos, i_val, j_val):
-    	sigma = 0.05
-    	xj = i_val/(self.N-1.)
-    	yj = j_val/(self.N-1.)
-    	rj = exp(-((xj-x_pos)**2 + (yj - y_pos)**2)/(2*(sigma**2)))
+        sigma = 0.05
+        xj = i_val/(self.N-1.)
+        yj = j_val/(self.N-1.)
+        rj = exp(-((xj-x_pos)**2 + (yj - y_pos)**2)/(2*(sigma**2)))
         return rj
 
     def _arrived(self):
@@ -363,7 +364,7 @@ class Gridworld:
         Check if the agent has arrived.
         """
         return (self.x_position - self.reward_position[0])**2 +\
-        (self.y_position - self.reward_position[1])**2 <= 0.1**2
+               (self.y_position - self.reward_position[1])**2 <= 0.1**2
 
     def _reward(self):
         """
@@ -466,7 +467,8 @@ class Gridworld:
         """
 
         # set the agents color
-        self._update_display(self.x_position_old, self.y_position_old, 0, 0.1+sin(latency/100)*0.8) # Decrease color over time
+        self._update_display(self.x_position_old, self.y_position_old, 0, 0.1+abs(sin(latency/70.)/2.)*0.8) # Decrease color over time
+        self._update_display(self.x_position_old, self.y_position_old, 2, 0.1+abs(sin(latency/1000.)/2.)*0.8) # Decrease color over time
         # self._update_display(self.x_position_old, self.y_position_old, 0, 0.5) # Cst color
         self._update_display(self.x_position_old, self.y_position_old, 1, 0)
         self._update_display(self.x_position, self.y_position, 0, 1)
