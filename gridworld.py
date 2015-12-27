@@ -1,4 +1,5 @@
-from pylab import *                                                                                                  
+from pylab import *
+import matplotlib.pyplot as plt
 import numpy
 from time import sleep
 import os, shutil
@@ -103,7 +104,7 @@ class Gridworld:
             
             """
             for trial in range(N_trials):
-                print 'Start trial ', run, ', ', trial
+                print '\rStart trial ', run, ', ', trial
                 # run a trial and store the time it takes to the target
                 latency = self._run_trial()
                 
@@ -198,9 +199,13 @@ class Gridworld:
         self.x_direction[self.actions==6] = -1
         self.x_direction[self.actions==7] = -1
 
-        figure(2)
+        plt.figure(2)
         clf()
-        quiver(self.x_direction,self.y_direction)
+        Q = plt.quiver(self.x_direction,self.y_direction)
+        plt.quiverkey(Q, 0.9, 0.95, 2, r'$2 \frac{m}{s}$',
+                   labelpos='E',
+                   coordinates='figure',
+                   fontproperties={'weight': 'bold'})
         axis([-0.5, self.N - 0.5, -0.5, self.N - 0.5])
 
     def reset(self):
@@ -291,6 +296,8 @@ class Gridworld:
             self._visualize_current_state(latency)
         
             latency = latency + 1
+            if latency % 500 == 0:
+                print 'Still going after', latency, 'iterations.'
             if latency > maxIter:
                 break;
 
@@ -530,4 +537,4 @@ class Gridworld:
 if __name__ == "__main__":
     grid = Gridworld(20)
     #grid.run(50, 10); # For the final run
-    grid.run(150, 3);
+    grid.run(150, 1);
