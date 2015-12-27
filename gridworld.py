@@ -108,10 +108,10 @@ class Gridworld:
                 latency = self._run_trial()
                 
                 self.latency_list.append(latency)
-                imsave('results/' + str(run) + '_' + str(trial) + '.png', self._display)
+                imsave('results/' + str(run).zfill(3) + '_' + str(trial).zfill(5) + '.png', self._display)
                 
                 self.navigation_map() # TODO: Check the function
-                savefig('results/' + str(run) + '_' + str(trial) + '_navigationMap_.png')
+                savefig('results/' + str(run).zfill(3) + '_' + str(trial).zfill(5) + '_navigationMap_.png')
                 
                 if self._isVisualization:
                     self._close_visualization()
@@ -122,7 +122,7 @@ class Gridworld:
             self.latencies += latencies/N_runs
             
             self.learning_curve() # TODO: Check the function
-            savefig('results/' + str(run) + '_learningCurve_.png')
+            savefig('results/' + str(run).zfill(3) + '_learningCurve_.png')
 
     # def visualize_trial(self):
     #     """
