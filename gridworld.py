@@ -1,5 +1,4 @@
 from pylab import *
-import matplotlib.pyplot as plt
 import numpy
 from time import sleep
 import os, shutil
@@ -195,9 +194,9 @@ class Gridworld:
         self.x_direction[self.actions==6] = -1
         self.x_direction[self.actions==7] = -1
 
-        plt.figure(2)
+        figure(2)
         clf()
-        plt.quiver(self.x_direction,self.y_direction)
+        quiver(self.x_direction,self.y_direction)
         axis([-0.5, self.N - 0.5, -0.5, self.N - 0.5])
 
     def reset(self):
