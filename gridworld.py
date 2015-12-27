@@ -104,7 +104,7 @@ class Gridworld:
             
             """
             for trial in range(N_trials):
-                print '\rStart trial ', run, ', ', trial
+                print 'Start trial ', run, ', ', trial
                 # run a trial and store the time it takes to the target
                 latency = self._run_trial()
                 
@@ -118,10 +118,6 @@ class Gridworld:
                     self._close_visualization()
                 
                 print 'Results saved'
-
-            points = [(0.1,0.1),(0.1,0.9),(0.5,0.1),(0.5,0.9),(0.9,0.1)]
-            for k in points:
-                print 'best action to take at ', k , ' is ', argmax(self.compute_Q(k[0],k[1],range(8)))
 
             latencies = array(self.latency_list)
             self.latencies += latencies/N_runs
@@ -201,11 +197,7 @@ class Gridworld:
 
         plt.figure(2)
         clf()
-        Q = plt.quiver(self.x_direction,self.y_direction)
-        plt.quiverkey(Q, 0.9, 0.95, 2, r'$2 \frac{m}{s}$',
-                   labelpos='E',
-                   coordinates='figure',
-                   fontproperties={'weight': 'bold'})
+        plt.quiver(self.x_direction,self.y_direction)
         axis([-0.5, self.N - 0.5, -0.5, self.N - 0.5])
 
     def reset(self):
@@ -535,4 +527,4 @@ class Gridworld:
 if __name__ == "__main__":
     grid = Gridworld(20)
     #grid.run(50, 10); # For the final run
-    grid.run(10000, 1);
+    grid.run(100,1);
