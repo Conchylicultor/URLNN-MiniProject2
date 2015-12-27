@@ -78,6 +78,7 @@ class Gridworld:
         self._isRecording = True # useless (not used)
         self._isVerbose = False
         self._isVisualization = False
+        self._isStopped = False
 
         # initialize the Q-values etc.
         self._init_run()
@@ -105,9 +106,21 @@ class Gridworld:
                 print 'Start trial ', run, ', ', trial
                 # run a trial and store the time it takes to the target
                 latency = self._run_trial()
+                
                 self.latency_list.append(latency)
                 imsave('results/' + str(run) + '_' + str(trial) + '.png', self._display)
+                
+                self.navigation_map # TODO:Check the function
+                savefig('results/' + str(run) + '_' + str(trial) + '_navigationMap_.png')
+
+                if self._isVisualization:
+                	self._close_visualization()
+
                 print 'Results saved'
+
+            points = [(0.1,0.1),(0.1,0.9),(0.5,0.1),(0.5,0.9),(0.9,0.1)]
+            for k in points:
+                print 'best action to take at ', k , ' is ', argmax(self.compute_Q(k[0],k[1],range(8)))
 
             latencies = array(self.latency_list)
             self.latencies += latencies/N_runs
@@ -115,27 +128,27 @@ class Gridworld:
             self.learning_curve() # TODO: Check the function
             savefig('results/' + str(run) + '_learningCurve_.png')
 
-    def visualize_trial(self):
-        """
-        Run a single trial with a graphical display that shows in
-                red   - the position of the agent
-                blue  - walls/obstacles
-                green - the reward position
+    # def visualize_trial(self):
+    #     """
+    #     Run a single trial with a graphical display that shows in
+    #             red   - the position of the agent
+    #             blue  - walls/obstacles
+    #             green - the reward position
 
-        Note that for the simulation, exploration is reduced -> self.epsilon=0.1
+    #     Note that for the simulation, exploration is reduced -> self.epsilon=0.1
     
-        """
-        # store the old exploration/exploitation parameter
-        epsilon = self.epsilon
+    #     """
+    #     # store the old exploration/exploitation parameter
+    #     epsilon = self.epsilon
 
-        # favor exploitation, i.e. use the action with the
-        # highest Q-value most of the time
-        self.epsilon = 0.1
+    #     # favor exploitation, i.e. use the action with the
+    #     # highest Q-value most of the time
+    #     self.epsilon = 0.1
 
-        self._run_trial(visualize=True)
+    #     self._run_trial(visualize=True)
 
-        # restore the old exploration/exploitation factor
-        self.epsilon = epsilon
+    #     # restore the old exploration/exploitation factor
+    #     self.epsilon = epsilon
 
     def learning_curve(self,log=False,filter=1.):
         """
@@ -145,7 +158,7 @@ class Gridworld:
         filter=1. : timescale of the running average.
         log    : Logarithmic y axis.
         """
-        figure() #a matplotlib figure instance
+        figure(3) #a matplotlib figure instance
         xlabel('trials')
         ylabel('time to reach target')
         latencies = array(self.latency_list)
@@ -166,15 +179,15 @@ class Gridworld:
         self.x_direction = numpy.zeros((self.N,self.N))
         self.y_direction = numpy.zeros((self.N,self.N))
 
-        self.actions = argmax(self.Q[:,:,:],axis=2)
-        self.y_direction[self.actions==0] = 1
-        self.y_direction[self.actions==1] = 1
-        self.y_direction[self.actions==2] = 0
-        self.y_direction[self.actions==3] = -1
-        self.y_direction[self.actions==4] = -1
-        self.y_direction[self.actions==5] = -1
-        self.y_direction[self.actions==6] = 0
-        self.y_direction[self.actions==7] = 1
+        self.actions = argmax(self.W[:,:,:],axis=2)
+        self.y_direction[self.actions==0] = 1 # Up
+        self.y_direction[self.actions==1] = 1 # Up right
+        self.y_direction[self.actions==2] = 0 # Right
+        self.y_direction[self.actions==3] = -1 # Down right
+        self.y_direction[self.actions==4] = -1 # Down
+        self.y_direction[self.actions==5] = -1 # Down left
+        self.y_direction[self.actions==6] = 0 # Left
+        self.y_direction[self.actions==7] = 1 # Up left
         
         self.x_direction[self.actions==0] = 0
         self.x_direction[self.actions==1] = 1
@@ -185,17 +198,18 @@ class Gridworld:
         self.x_direction[self.actions==6] = -1
         self.x_direction[self.actions==7] = -1
 
-        figure()
+        figure(2)
+        clf()
         quiver(self.x_direction,self.y_direction)
         axis([-0.5, self.N - 0.5, -0.5, self.N - 0.5])
 
     def reset(self):
         """
-        Reset the Q-values (and the latency_list).
+        Reset the W-values (and the latency_list).
         
         Instant amnesia -  the agent forgets everything he has learned before    
         """
-        self.Q = numpy.random.rand(self.N,self.N,8)
+        self.W = numpy.random.rand(self.N,self.N,8)
         self.latency_list = []
 
     def plot_Q(self):
@@ -207,7 +221,7 @@ class Gridworld:
         figure()
         for i in range(4):
             subplot(2,2,i+1)
-            imshow(self.Q[:,:,i],interpolation='nearest',origin='lower',vmax=1.1)
+            imshow(self.W[:,:,i],interpolation='nearest',origin='lower',vmax=1.1)
             if i==0:
                 title('Up')
             elif i==1:
@@ -228,10 +242,10 @@ class Gridworld:
 
     def _init_run(self):
         """
-        Initialize the Q-values, eligibility trace, position etc.
+        Initialize the W-values, eligibility trace, position etc.
         """
         # initialize the Q-values and the eligibility trace
-        self.Q = 0.01 * numpy.random.rand(self.N,self.N,8) + 0.1
+        self.W = 0.01 * numpy.random.rand(self.N,self.N,8) + 0.1
         self.e = numpy.zeros((self.N,self.N,8))
         
         # list that contains the times it took the agent to reach the target for all trials
@@ -299,16 +313,19 @@ class Gridworld:
         sure how r_j is used in this calculation?
         """
         # update the eligibility trace
-        self.e = self.lambda_eligibility * self.e
-        self.e[self.x_position_old, self.y_position_old,self.action_old] += 1.
+        self.e = self.gamma * self.lambda_eligibility * self.e
+        for i in range(self.N):
+            for j in range(self.N):
+                self.e[i,j,self.action] += self.compute_rj(self.x_position,self.y_position,i,j)
+                # updated based on action taken in state (x,y).
+                #print i, '-', j, ': ', self.compute_rj(self.x_position_old, self.y_position_old, i, j) # TODO: Too big. Pb with sigma in the gaussian ?
 
-        # update the Q-values
-        if self.action_old != None:
-            self.Q +=     \
-                self.eta * self.e *\
-                (self._reward()  \
-                - ( self.Q[self.x_position_old,self.y_position_old,self.action_old] \
-                - self.gamma * self.Q[self.x_position, self.y_position, self.action] )  )
+        # update the weights
+        if self.action_old != None:	
+            q_old = self.compute_Q(self.x_position_old,self.y_position_old,self.action_old)
+            q_new = self.compute_Q(self.x_position, self.y_position, self.action)
+            delta_t = self._reward() - (q_old - self.gamma*q_new)
+            self.W += self.eta * delta_t * self.e
 
     def _choose_action(self):    
         """
@@ -320,15 +337,39 @@ class Gridworld:
         self.action_old = self.action
         if numpy.random.rand() < self.epsilon:
             self.action = numpy.random.randint(8)
+            # print 'Randomly pick action', self.action
         else:
-        # this will become argmax of sum over j of w*r
-            self.action = argmax(self.Q[self.x_position,self.y_position,:])    
+
+            Q_values = numpy.zeros(8) # 1 Q-value per action
+            for i_action in range(8):
+                Q_values[i_action] = self.compute_Q(self.x_position, self.y_position, i_action)
+            self.action = argmax(Q_values)
+
+            #print Q_values
+            #print self.action # TODO: Strange, action plot smaller and smaller values (bug in update rule?)
+            
+            # print 'best action picked:', self.action
+
+    def compute_Q(self, x_pos, y_pos, i_action):
+        Q_value = 0
+        for i in range(self.N):
+            for j in range(self.N):
+            	Q_value += self.W[i,j,i_action] * self.compute_rj(x_pos, y_pos,i,j)
+        return Q_value
+
+    def compute_rj(self, x_pos, y_pos, i_val, j_val):
+    	sigma = 0.05
+    	xj = i_val/(self.N-1.)
+    	yj = j_val/(self.N-1.)
+    	rj = exp(-((xj-x_pos)**2 + (yj - y_pos)**2)/(2*(sigma**2)))
+        return rj
 
     def _arrived(self):
         """
         Check if the agent has arrived.
         """
-        return (self.x_position - self.reward_position[0])**2 + (self.y_position - self.reward_position[1])**2 <= 0.1**2
+        return (self.x_position - self.reward_position[0])**2 +\
+        (self.y_position - self.reward_position[1])**2 <= 0.1**2
 
     def _reward(self):
         """
@@ -444,6 +485,7 @@ class Gridworld:
 
         # update the figure
         if self._isVisualization:
+            figure(1)
             self._visualization.set_data(self._display)
             draw()
         
@@ -453,7 +495,7 @@ class Gridworld:
     def _init_visualization(self):
         
         # create the figure
-        figure()
+        figure(1)
         # initialize the content of the figure (RGB at each position)
         self._display = numpy.zeros((self.N,self.N,3))
 
@@ -479,11 +521,15 @@ class Gridworld:
         self._display[floor(x*self.N), floor(y*self.N), channel] = value
 
     def _close_visualization(self):
-        print "Press <return> to proceed..."
-        raw_input()
+        if self._isStopped:
+            print "Press <return> to proceed..."
+            raw_input()
+        figure(1)
+        close()
+        figure(2)
         close()
 
 if __name__ == "__main__":
     grid = Gridworld(20)
     #grid.run(50, 10); # For the final run
-    grid.run(10, 1);
+    grid.run(5, 1);
