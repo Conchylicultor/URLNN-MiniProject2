@@ -365,16 +365,14 @@ class Gridworld:
 
     def _update_w(self):
         """
-        I changed this from _update_Q to _update_w because for each state that
-        has a non-zero eligibility trace, we must update the weights associated
-        with the action taken at that state for all centres j - but I am not
-        sure how r_j is used in this calculation?
         """
         # update the eligibility trace
         self.e = self.gamma * self.lambda_eligibility * self.e # TODO: Is it the right gamma ?TODO: Where is gamma ? e(t+1)=gamma*lambda*e(t) + ...
         for i in range(self.N):
             for j in range(self.N):
-                self.e[i,j,self.action] += self.compute_rj(self.x_position,self.y_position,i,j) # TODO: Old position ?? Or new one ?? << In the original code, it was the old position used to update e
+                #self.e[i,j,self.action] += self.compute_rj(self.x_position,self.y_position,i,j)
+                self.e[i,j,self.action_old] += self.compute_rj(self.x_position_old,self.y_position_old,i,j)
+                # TODO: Old position ?? Or new one ?? << In the original code, it was the old position used to update e
                 # (I may be wrong but I think the old position correspond to the current position in the sarsa algorithm)
                 # updated based on action taken in state (x,y).
                 #print i, '-', j, ': ', self.compute_rj(self.x_position_old, self.y_position_old, i, j) # TODO: Too big. Pb with sigma in the gaussian ?
