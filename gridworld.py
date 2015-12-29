@@ -201,7 +201,7 @@ class Gridworld:
         if not log:
             plot(self.rewards*self.run_ratio)
         else:
-        	semilogy(self.rewards*self.run_ratio)
+            semilogy(self.rewards*self.run_ratio)
 
     def navigation_map(self):
         """
@@ -233,14 +233,20 @@ class Gridworld:
         x_direction[actions==6] = -1
         x_direction[actions==7] = -sqrt(2)/2
         
-        x_direction = x_direction * values/maxValue; # See the strength of the direction (Normalised)
-        y_direction = y_direction * values/maxValue;
-
         figure(2)
         clf()
-        quiver(x_direction, y_direction, angles='xy', scale_units='xy', scale=1)
+        quiver(x_direction, y_direction, values/maxValue)
         axis([-0.5, self.N - 0.5, -0.5, self.N - 0.5])
         xlabel('Max Q value: ' + str(maxValue))
+        
+        #x_direction = x_direction * values/maxValue; # See the strength of the direction (Normalised)
+        #y_direction = y_direction * values/maxValue;
+
+        #figure(2)
+        #clf()
+        #quiver(x_direction, y_direction, angles='xy', scale_units='xy', scale=1)
+        #axis([-0.5, self.N - 0.5, -0.5, self.N - 0.5])
+        #xlabel('Max Q value: ' + str(maxValue))
 
     def reset(self):
         """
@@ -579,4 +585,4 @@ class Gridworld:
 
 if __name__ == "__main__":
     grid = Gridworld(20)
-    grid.run(50,100);
+    grid.run(50,4);
