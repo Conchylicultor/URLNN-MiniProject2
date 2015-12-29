@@ -1,5 +1,4 @@
 from pylab import *
-import matplotlib.pyplot as plt
 import numpy
 from time import sleep
 import os, shutil
@@ -86,6 +85,7 @@ class Gridworld:
 
     def run(self,N_trials=50,N_runs=10):
         self.latencies = zeros(N_trials)
+        self.rewards = zeros(N_trials)
         
         for run in range(N_runs):
             self._init_run()
@@ -119,11 +119,29 @@ class Gridworld:
                 
                 print 'Results saved'
 
+                self.reward_list.append(self.trial_reward)
+
             latencies = array(self.latency_list)
             self.latencies += latencies/N_runs
+
+            rewards = array(self.reward_list)
+            self.rewards += rewards/N_runs
             
-            self.learning_curve() # TODO: Check the function
-            savefig('results/' + str(run).zfill(3) + '_learningCurve_.png')
+            # plot learning cuve and total reward curve every r runs.
+            # r must divide N_runs.
+            r = 2
+            if N_runs % r == 0:
+                if run % r == r-1:
+                    self.run_ratio = N_runs/(run+1)
+                    self.learning_curve() # TODO: Check the function
+                    savefig('results/' + str(run).zfill(3) + '_learningCurve_.png')
+                    close(3)
+
+                    self.reward_curve()
+                    savefig('results/' + str(run).zfill(3) + '_rewardCurve_.png')
+                    close(4)
+
+                    print 'Plotted a learning curve and a reward curve after run number', run
 
     # def visualize_trial(self):
     #     """
@@ -156,17 +174,34 @@ class Gridworld:
         log    : Logarithmic y axis.
         """
         figure(3) #a matplotlib figure instance
-        xlabel('trials')
+        xlabel('trial')
         ylabel('time to reach target')
-        latencies = array(self.latency_list)
+        # latencies = array(self.latency_list)
         # calculate a running average over the latencies with a averaging time 'filter'
-        for i in range(1,latencies.shape[0]):
-            latencies[i] = latencies[i-1] + (latencies[i] - latencies[i-1])/float(filter)
+        # for i in range(1,latencies.shape[0]):
+        #     latencies[i] = latencies[i-1] + (latencies[i] - latencies[i-1])/float(filter)
 
         if not log:
-            plot(self.latencies)
+            plot(self.latencies*self.run_ratio)
         else:
-            semilogy(self.latencies)
+            semilogy(self.latencies*self.run_ratio)
+
+    def reward_curve(self,log=False,filter=1.):
+        """
+        Show a running average of the time it takes the agent to reach the target location.
+
+        Options:
+        filter=1. : timescale of the running average.
+        log    : Logarithmic y axis.
+        """
+        figure(4) #a matplotlib figure instance
+        xlabel('trial')
+        ylabel('total reward received')
+        
+        if not log:
+            plot(self.rewards*self.run_ratio)
+        else:
+        	semilogy(self.rewards*self.run_ratio)
 
     def navigation_map(self):
         """
@@ -201,9 +236,9 @@ class Gridworld:
         x_direction = x_direction * values/maxValue; # See the strength of the direction (Normalised)
         y_direction = y_direction * values/maxValue;
 
-        plt.figure(2)
+        figure(2)
         clf()
-        plt.quiver(x_direction, y_direction, angles='xy', scale_units='xy', scale=1)
+        quiver(x_direction, y_direction, angles='xy', scale_units='xy', scale=1)
         axis([-0.5, self.N - 0.5, -0.5, self.N - 0.5])
         xlabel('Max Q value: ' + str(maxValue))
 
@@ -223,18 +258,26 @@ class Gridworld:
         The figure consists of 4 subgraphs, each of which shows the Q-values 
         colorcoded for one of the actions.
         """
-        figure()
-        for i in range(4):
-            subplot(2,2,i+1)
-            imshow(self.W[:,:,i],interpolation='nearest',origin='lower',vmax=1.1)
+        figure(5)
+        for i in range(8):
+            subplot(4,2,i+1)
+            imshow(self.compute_Q[:,:,i],interpolation='nearest',origin='lower',vmax=1.1)
             if i==0:
                 title('Up')
             elif i==1:
-                title('Down')
+                title('Up right')
             elif i==2:
                 title('Right')
-            else:
+            elif i==3:
+                title('Down right')
+            elif i==4:
+                title('Down')
+            elif i==5:
+                title('Down left')
+            elif i==6:
                 title('Left')
+            else:
+                title('Up left')
 
             colorbar()
         draw()
@@ -257,6 +300,7 @@ class Gridworld:
         # list that contains the times it took the agent to reach the target for all trials
         # serves to track the progress of learning
         self.latency_list = []
+        self.reward_list = []
 
         # initialize the state and action variables
         self.x_position = None
@@ -283,6 +327,7 @@ class Gridworld:
 
         # initialize the latency (time to reach the target) for this trial
         latency = 0.
+        self.trial_reward = 0.
 
         # start the visualization, if asked for
         self._init_visualization()
@@ -293,6 +338,8 @@ class Gridworld:
             self._update_state()
             self._choose_action()    
             self._update_w()
+
+            self.trial_reward += self._reward()
 
             self._visualize_current_state(latency)
         
@@ -532,5 +579,4 @@ class Gridworld:
 
 if __name__ == "__main__":
     grid = Gridworld(20)
-    #grid.run(50, 10); # For the final run
-    grid.run(100,1);
+    grid.run(50,100);
