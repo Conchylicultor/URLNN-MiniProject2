@@ -105,6 +105,10 @@ class Gridworld:
             """
             for trial in range(N_trials):
                 print 'Start trial ', run, ', ', trial
+                
+                self.epsilon = self._nextEpsilon(trial, N_trials)
+                print 'Epsilon ', self.epsilon
+                
                 # run a trial and store the time it takes to the target
                 latency = self._run_trial()
                 
@@ -363,6 +367,10 @@ class Gridworld:
             
         return latency
 
+    def _nextEpsilon(self, trial, N_trials):
+        return 1.0 - 0.9*trial/N_trials
+        #return 0.9*exp(-trial/2) + 0.1
+        
     def _update_w(self):
         """
         """
@@ -400,9 +408,6 @@ class Gridworld:
             for i_action in range(8):
                 Q_values[i_action] = self.compute_Q(self.x_position, self.y_position, i_action)
             self.action = argmax(Q_values)
-
-            #print Q_values
-            #print self.action # TODO: Strange, action plot smaller and smaller values (bug in update rule?)
             
             # print 'best action picked:', self.action
 
