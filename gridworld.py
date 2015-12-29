@@ -173,32 +173,39 @@ class Gridworld:
         Plot the direction with the highest Q-value for every position.
         Useful only for small gridworlds, otherwise the plot becomes messy.
         """
-        self.x_direction = numpy.zeros((self.N,self.N))
-        self.y_direction = numpy.zeros((self.N,self.N))
+        x_direction = numpy.zeros((self.N,self.N))
+        y_direction = numpy.zeros((self.N,self.N))
 
-        self.actions = argmax(self.W[:,:,:],axis=2)
-        self.y_direction[self.actions==0] = 1 # Up
-        self.y_direction[self.actions==1] = 1 # Up right
-        self.y_direction[self.actions==2] = 0 # Right
-        self.y_direction[self.actions==3] = -1 # Down right
-        self.y_direction[self.actions==4] = -1 # Down
-        self.y_direction[self.actions==5] = -1 # Down left
-        self.y_direction[self.actions==6] = 0 # Left
-        self.y_direction[self.actions==7] = 1 # Up left
+        actions = argmax(self.W[:,:,:],axis=2)
+        values = amax(self.W[:,:,:],axis=2)
+        maxValue = amax(values)
         
-        self.x_direction[self.actions==0] = 0
-        self.x_direction[self.actions==1] = 1
-        self.x_direction[self.actions==2] = 1
-        self.x_direction[self.actions==3] = 1
-        self.x_direction[self.actions==4] = 0
-        self.x_direction[self.actions==5] = -1
-        self.x_direction[self.actions==6] = -1
-        self.x_direction[self.actions==7] = -1
+        y_direction[actions==0] = 1 # Up
+        y_direction[actions==1] = sqrt(2)/2 # Up right
+        y_direction[actions==2] = 0 # Right
+        y_direction[actions==3] = -sqrt(2)/2 # Down right
+        y_direction[actions==4] = -1 # Down
+        y_direction[actions==5] = -sqrt(2)/2 # Down left
+        y_direction[actions==6] = 0 # Left
+        y_direction[actions==7] = sqrt(2)/2 # Up left
+        
+        x_direction[actions==0] = 0
+        x_direction[actions==1] = sqrt(2)/2
+        x_direction[actions==2] = 1
+        x_direction[actions==3] = sqrt(2)/2
+        x_direction[actions==4] = 0
+        x_direction[actions==5] = -sqrt(2)/2
+        x_direction[actions==6] = -1
+        x_direction[actions==7] = -sqrt(2)/2
+        
+        x_direction = x_direction * values/maxValue; # See the strength of the direction (Normalised)
+        y_direction = y_direction * values/maxValue;
 
         plt.figure(2)
         clf()
-        plt.quiver(self.x_direction,self.y_direction)
+        plt.quiver(x_direction, y_direction, angles='xy', scale_units='xy', scale=1)
         axis([-0.5, self.N - 0.5, -0.5, self.N - 0.5])
+        xlabel('Max Q value: ' + str(maxValue))
 
     def reset(self):
         """
@@ -206,7 +213,8 @@ class Gridworld:
         
         Instant amnesia -  the agent forgets everything he has learned before    
         """
-        self.W = numpy.random.rand(self.N,self.N,8)
+        #self.W = numpy.random.rand(self.N,self.N,8)
+        self.W = numpy.zeros((self.N,self.N,8))
         self.latency_list = []
 
     def plot_Q(self):
@@ -242,7 +250,8 @@ class Gridworld:
         Initialize the W-values, eligibility trace, position etc.
         """
         # initialize the W-values and the eligibility trace
-        self.W = 0.01 * numpy.random.rand(self.N,self.N,8) + 0.1
+        #self.W = 0.01 * numpy.random.rand(self.N,self.N,8) + 0.1
+        self.W = numpy.zeros((self.N,self.N,8))
         self.e = numpy.zeros((self.N,self.N,8))
         
         # list that contains the times it took the agent to reach the target for all trials
@@ -499,11 +508,6 @@ class Gridworld:
         # position of the agent
         self._update_display(self.x_position, self.y_position, 0, 1)
         self._update_display(self.reward_position[0], self.reward_position[1], 1, 1)
-                
-        #for x in range(self.N): # TODO: No obstacles ?
-        #    for y in range(self.N):
-        #        if self._is_wall(x_position=x/19,y_position=y/19):
-        #            self._display[x/19,y/19,2] = 1.
 
         self._visualization = imshow(self._display,interpolation='nearest',origin='lower')
         
