@@ -254,8 +254,8 @@ class Gridworld:
         
         Instant amnesia -  the agent forgets everything he has learned before    
         """
-        #self.W = numpy.random.rand(self.N,self.N,8)
-        self.W = numpy.zeros((self.N,self.N,8))
+        self.W =  0.01 * numpy.random.rand(self.N,self.N,8) + 0.1
+        #self.W = numpy.zeros((self.N,self.N,8))
         self.latency_list = []
 
     def plot_Q(self):
@@ -299,8 +299,8 @@ class Gridworld:
         Initialize the W-values, eligibility trace, position etc.
         """
         # initialize the W-values and the eligibility trace
-        #self.W = 0.01 * numpy.random.rand(self.N,self.N,8) + 0.1
-        self.W = numpy.zeros((self.N,self.N,8))
+        self.W = 0.01 * numpy.random.rand(self.N,self.N,8) + 0.1
+        #self.W = numpy.zeros((self.N,self.N,8))
         self.e = numpy.zeros((self.N,self.N,8))
         
         # list that contains the times it took the agent to reach the target for all trials
