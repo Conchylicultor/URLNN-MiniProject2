@@ -131,21 +131,17 @@ class Gridworld:
             rewards = array(self.reward_list)
             self.rewards += rewards/N_runs
             
-            # plot learning cuve and total reward curve every r runs.
-            # r must divide N_runs.
-            r = 2
-            if N_runs % r == 0:
-                if run % r == r-1:
-                    self.run_ratio = N_runs/(run+1)
-                    self.learning_curve() # TODO: Check the function
-                    savefig('results/' + str(run).zfill(3) + '_learningCurve_.png')
-                    close(3)
+            # plot learning cuve and total reward curve at the end of the run (include all the previous runs)
+            self.run_ratio = N_runs/(run+1)
+            self.learning_curve() # TODO: Check the function
+            savefig('results/' + str(run).zfill(3) + '_learningCurve_.png')
+            close(3)
 
-                    self.reward_curve()
-                    savefig('results/' + str(run).zfill(3) + '_rewardCurve_.png')
-                    close(4)
+            self.reward_curve()
+            savefig('results/' + str(run).zfill(3) + '_rewardCurve_.png')
+            close(4)
 
-                    print 'Plotted a learning curve and a reward curve after run number', run
+            print 'Plotted a learning curve and a reward curve after run number', run
 
     # def visualize_trial(self):
     #     """
@@ -550,9 +546,9 @@ class Gridworld:
             figure(1)
             self._visualization.set_data(self._display)
             draw()
-        
-        # and wait a little while to control the speed of the presentation
-        sleep(0.01)
+            
+            # and wait a little while to control the speed of the presentation
+            sleep(0.01)
         
     def _init_visualization(self):
         
@@ -588,4 +584,4 @@ class Gridworld:
 
 if __name__ == "__main__":
     grid = Gridworld(20)
-    grid.run(50,4);
+    grid.run(50,10);
