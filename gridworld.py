@@ -18,7 +18,7 @@ class Gridworld:
     navigation_map()     : Plot the movement direction with the highest Q-value for all positions.
     """    
         
-    def __init__(self,N,reward_position=(0.8,0.8),obstacle=False, lambda_eligibility=0.95):
+    def __init__(self,N,reward_position=(0.8,0.8),obstacle=False, lambda_eligibility=0.95,epsilon=0.5):
         """
         Creates a quadratic NxN gridworld. 
 
@@ -54,7 +54,7 @@ class Gridworld:
 
         # probability at which the agent chooses a random
         # action. This makes sure the agent explores the grid.
-        self.epsilon = 0.5
+        self.epsilon = epsilon
 
         # learning rate
         self.eta = 0.005
@@ -142,6 +142,11 @@ class Gridworld:
             close(4)
 
             print 'Plotted a learning curve and a reward curve after run number', run
+
+        # find average of last 10 latencies
+        last10mean = numpy.mean(self.latencies[-10:])
+        print 'The average of the last 10 latencies is', last10mean
+        return last10mean
 
     # def visualize_trial(self):
     #     """
@@ -583,5 +588,9 @@ class Gridworld:
         close()
 
 if __name__ == "__main__":
-    grid = Gridworld(20)
-    grid.run(50,10);
+    # mean = []
+    # for z in range(11):
+    grid = Gridworld(20)#,epsilon=float(z)/10)
+    grid.run(1,1)
+    # mean.append(grid.run(50,10))
+    # print mean
