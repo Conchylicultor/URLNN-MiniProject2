@@ -144,8 +144,9 @@ class Gridworld:
             print 'Plotted a learning curve and a reward curve after run number', run
 
         # find average of last 10 latencies
-        last10mean = numpy.mean(self.latencies[-10:])
-        print 'The average of the last 10 latencies is', last10mean
+        print 'Averaged results', self.latencies
+        last10mean = numpy.mean(self.latencies[-3:])
+        print 'The average of the last 3 latencies is', last10mean
         return last10mean
 
     # def visualize_trial(self):
@@ -591,6 +592,6 @@ if __name__ == "__main__":
     # mean = []
     # for z in range(11):
     grid = Gridworld(20)#,epsilon=float(z)/10)
-    grid.run(1,1)
+    grid.run(50,10)
     # mean.append(grid.run(50,10))
     # print mean
