@@ -364,7 +364,7 @@ class Gridworld:
         return latency
 
     def _nextEpsilon(self, trial, N_trials):
-        return 1.0 - 0.9*trial/N_trials
+        return 1.0 - 1.0*trial/(N_trials-1)
         #return 0.9*exp(-trial/2) + 0.1
         
     def _update_w(self):
